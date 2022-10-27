@@ -1,12 +1,12 @@
-from ipwhois.net import Net
-from ipwhois.asn import ASNOrigin
 from pyrsconf import RouteObject
 
 import os
 import json
 import uuid
 
-DUMMY_NET = "193.201.40.0"
+
+def _get_random_tmpfile():
+    return "/tmp/irr-{}.json".format(uuid.uuid4().hex)
 
 
 class BGPQException(Exception):
@@ -35,7 +35,7 @@ class WhoisProxy:
     @staticmethod
     def expand_as_macro(macro: str) -> list:
         entries = []
-        filename = WhoisProxy._get_random_tmpfile()
+        filename = _get_random_tmpfile()
         cmd = "bgpq4 -h whois.radb.net -t -j {} > {}".format(macro, filename)
         if os.system(cmd) != 0:
             raise BGPQException(macro)
@@ -51,25 +51,19 @@ class WhoisProxy:
     @staticmethod
     def expand_as(asn: int, proto: int) -> list:
         result = []
-        mynet = Net(DUMMY_NET)
-        obj = ASNOrigin(mynet)
-        lookup = obj.lookup("AS{}".format(asn))
+        filename = _get_random_tmpfile()
+        cmd = f"bgpq4 -h whois.radb.net -{proto} -j as{asn} > {filename}"
+        if os.system(cmd) != 0:
+            raise BGPQException(asn)
+        with open(filename) as f:
+            data = json.load(f)
+        f.close()
+        os.remove(filename)
 
-        for net in lookup['nets']:
-            cidr = net['cidr']
-            raw_source = net['source']
-            # deal with garbage remarks in ipwhois source
-            multiline = raw_source.find('\n')
-            if multiline > 0:
-                source = raw_source[0:multiline].upper()
-            else:
-                source = raw_source.upper()
-            route = RouteObject(cidr, asn, source)
+        for net in data['NN']:
+            prefix = net['prefix']
+            source = "UNDEF"
+            route = RouteObject(prefix, asn, source)
             if route.proto() == proto:
                 result.append(route)
         return result
-
-    # internal use, required for temporary bgpq4 output storage
-    @staticmethod
-    def _get_random_tmpfile():
-        return "/tmp/irr-{}.json".format(uuid.uuid4().hex)
