@@ -49,9 +49,9 @@ def main():
         query = None
 
         if do_all:
-            query = "SELECT shortname, autsys, asmacro FROM cust ORDER BY shortname"
+            query = "SELECT shortname, autsys, peeringmacro FROM cust ORDER BY shortname"
         elif member is not None:
-            query = f"SELECT shortname, autsys, asmacro FROM cust WHERE shortname='{member}'"
+            query = f"SELECT shortname, autsys, peeringmacro FROM cust WHERE shortname='{member}'"
         else:
             print("specify either -a or -m <ixpm-member> to proceed")
             usage()
