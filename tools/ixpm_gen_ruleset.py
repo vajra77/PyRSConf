@@ -58,9 +58,10 @@ def main():
             exit(1)
 
         cursor.execute(query)
+        proxy = WhoisProxy()
         for (name, asn, macro) in cursor:
             file_path = f"{output}/as{asn}-v{proto}.json"
-            proxy = WhoisProxy()
+            print(f"generating filters for {name} in: {file_path}")
             routes = []
             if macro is None:
                 routes.extend(proxy.expand_as(asn, proto))
