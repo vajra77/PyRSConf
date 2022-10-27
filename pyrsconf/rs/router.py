@@ -37,8 +37,3 @@ class Router:
 
     def add_neighbor(self, neigh):
         self._neighbors.append(neigh)
-        if neigh.asn in self._filter_bucket.keys():
-            pass
-        else:
-            routes = _generate_routes(neigh.asn, neigh.asmacro)
-            self._filter_bucket[neigh.asn] = routes

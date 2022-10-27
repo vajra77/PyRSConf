@@ -1,5 +1,9 @@
 
 
+PROTO_IPV4 = 4
+PROTO_IPV6 = 6
+
+
 class RouteObject:
 
     def __init__(self, route, origin, source):
@@ -24,3 +28,11 @@ class RouteObject:
 
     def is_inet6(self):
         return ':' in self._route
+
+    def proto(self):
+        if self.is_inet():
+            return PROTO_IPV4
+        elif self.is_inet6():
+            return PROTO_IPV6
+        else:
+            raise ValueError("proto unknown")

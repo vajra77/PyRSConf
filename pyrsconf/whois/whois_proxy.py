@@ -49,7 +49,7 @@ class WhoisProxy:
 
     # expand an ASN into a list of ROUTE/6 objects
     @staticmethod
-    def expand_as(asn: int) -> list:
+    def expand_as(asn: int, proto: int) -> list:
         result = []
         mynet = Net(DUMMY_NET)
         obj = ASNOrigin(mynet)
@@ -65,7 +65,8 @@ class WhoisProxy:
             else:
                 source = raw_source.upper()
             route = RouteObject(cidr, asn, source)
-            result.append(route)
+            if route.proto() == proto:
+                result.append(route)
         return result
 
     # internal use, required for temporary bgpq4 output storage
