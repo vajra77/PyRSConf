@@ -3,13 +3,13 @@ import getopt
 import threading
 import mysql.connector
 import sys
+import time
 sys.path.append('.')
 sys.path.append('..')
 from pyrsconf import WhoisProxy, RouteSet
 from config import DB
 
 
-CHUNK_SIZE = 8
 SHARED_RESULTS = dict()
 
 
@@ -45,6 +45,7 @@ def get_options():
 def th_resolve_asn_list(asn_list, proto):
     for iter_asn in asn_list:
         SHARED_RESULTS[iter_asn] = WhoisProxy.expand_as(iter_asn, proto)
+        time.sleep(0.5)
 
 
 def main():
@@ -86,7 +87,8 @@ def main():
                         asn_list.append(asn)
                 else:
                     asn_list.append(asn)
-                chunked_asn_list = [asn_list[i:i+CHUNK_SIZE] for i in range(0, len(asn_list), CHUNK_SIZE)]
+                chunk_size = len(asn_list) // 4
+                chunked_asn_list = [asn_list[i:i+chunk_size] for i in range(0, len(asn_list), chunk_size)]
                 threads = list()
                 SHARED_RESULTS.clear()
                 for chunk in chunked_asn_list:
