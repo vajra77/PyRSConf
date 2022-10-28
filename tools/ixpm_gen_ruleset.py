@@ -9,9 +9,6 @@ from pyrsconf import WhoisProxy, RouteSet
 from config import DB
 
 
-SHARED_SEMAPHORE = threading.Semaphore(4)
-
-
 def usage():
     print("usage: ixpm_gen_ruleset.py -c <config-file> [-a | -m <ixpm-member>] -o <output-dir>")
 
@@ -53,9 +50,11 @@ def main():
         query = None
 
         if do_all:
-            query = "SELECT shortname, autsys, peeringmacro, peeringmacrov6 FROM cust ORDER BY shortname"
+            query = "SELECT shortname, autsys, peeringmacro, peeringmacrov6 " \
+                    "FROM cust WHERE type <> 2 ORDER BY shortname"
         elif member is not None:
-            query = f"SELECT shortname, autsys, peeringmacro, peeringmacrov6 FROM cust WHERE shortname='{member}'"
+            query = f"SELECT shortname, autsys, peeringmacro, peeringmacrov6 " \
+                    f"FROM cust WHERE shortname='{member}'"
         else:
             print("specify either -a or -m <ixpm-member> to proceed")
             cursor.close()
@@ -73,18 +72,14 @@ def main():
             print(f"generating filters for {name} in: {file_path}")
             sys.stdout.flush()
             try:
-                SHARED_SEMAPHORE.acquire()
                 all_routes = WhoisProxy.bulk_expand(asn, macro, proto)
-                SHARED_SEMAPHORE.release()
-
                 route_set = RouteSet.from_list(all_routes, proto)
                 with open(file_path, "w+") as f:
                     f.write(json.dumps(route_set.to_dict(), sort_keys=True, indent=4))
             except Exception as e:
                 print(f"exception caught: {e}", file=sys.stderr)
-                SHARED_SEMAPHORE.release()
-            # finally:
-            #     continue
+            finally:
+                continue
         cursor.close()
         cnx.close()
     except Exception as e:

@@ -4,9 +4,6 @@ import uuid
 from pyrsconf import RouteObject
 
 
-SHARED_RESULTS = dict()
-
-
 def _get_random_tmpfile():
     return "/tmp/irr-{}.json".format(uuid.uuid4().hex)
 
