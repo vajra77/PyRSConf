@@ -12,7 +12,7 @@ def _get_random_tmpfile():
     return "/tmp/irr-{}.json".format(uuid.uuid4().hex)
 
 
-def _th_expand_as(asn, proto):
+def _th_resolve_as(asn, proto):
     SHARED_RESULTS[asn] = list()
     filename = _get_random_tmpfile()
     cmd = f"bgpq4 -h whois.radb.net -{proto} -j as{asn} > {filename}"
@@ -97,10 +97,10 @@ class WhoisProxy:
         if macro is not None:
             asn_list.extend(cls.expand_as_macro(macro))
         if asn not in asn_list:
-            asn_list.append(asn)
+            asn_list.append(str(asn))
         threads = list()
         for iter_asn in asn_list:
-            th = (threading.Thread(target=_th_expand_as, args=(iter_asn, proto)))
+            th = (threading.Thread(target=_th_resolve_as, args=(iter_asn, proto)))
             th.start()
             threads.append(th)
         for th in threads:
