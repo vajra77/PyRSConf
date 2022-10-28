@@ -12,8 +12,8 @@ def _get_random_tmpfile():
     return "/tmp/irr-{}.json".format(uuid.uuid4().hex)
 
 
-def _th_resolve_as(asn, proto):
-    SHARED_RESULTS[asn] = list()
+def _th_resolve_as(asn: int, proto: int):
+    SHARED_RESULTS[str(asn)] = list()
     filename = _get_random_tmpfile()
     cmd = f"bgpq4 -h whois.radb.net -{proto} -j as{asn} > {filename}"
     if os.system(cmd) != 0:
@@ -27,7 +27,7 @@ def _th_resolve_as(asn, proto):
         source = "UNDEF"
         route = RouteObject(prefix, asn, source)
         if route.proto() == proto:
-            SHARED_RESULTS[asn].append(route)
+            SHARED_RESULTS[str(asn)].append(route)
 
 
 class BGPQException(Exception):
@@ -97,7 +97,7 @@ class WhoisProxy:
         if macro is not None:
             asn_list.extend(cls.expand_as_macro(macro))
         if asn not in asn_list:
-            asn_list.append(str(asn))
+            asn_list.append(asn)
         threads = list()
         for iter_asn in asn_list:
             th = (threading.Thread(target=_th_resolve_as, args=(iter_asn, proto)))
