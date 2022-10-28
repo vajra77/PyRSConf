@@ -1,2 +1,2 @@
 # PyRSConf
-Python Route Server configuration generator
+Route Server configuration suite
