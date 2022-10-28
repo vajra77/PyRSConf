@@ -1,8 +1,8 @@
 import json
 import getopt
-import threading
 import mysql.connector
 import sys
+import time
 sys.path.append('.')
 sys.path.append('..')
 from pyrsconf import WhoisProxy, RouteSet
@@ -79,6 +79,7 @@ def main():
             except Exception as e:
                 print(f"exception caught: {e}", file=sys.stderr)
             finally:
+                time.sleep(1.0)
                 continue
         cursor.close()
         cnx.close()
