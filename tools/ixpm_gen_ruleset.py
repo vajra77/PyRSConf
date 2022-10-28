@@ -60,7 +60,6 @@ def main():
             exit(1)
 
         cursor.execute(query)
-        proxy = WhoisProxy()
         for (name, asn, macro4, macro6) in cursor:
             if proto == 6 and macro6 is not None:
                 macro = macro6
@@ -69,16 +68,17 @@ def main():
             file_path = f"{output}/as{asn}-v{proto}.json"
             print(f"generating filters for {name} in: {file_path}")
             sys.stdout.flush()
-            routes = []
+            routes = list()
             try:
-                if macro is None:
-                    routes.extend(proxy.expand_as(asn, proto))
-                else:
-                    asn_list = proxy.expand_as_macro(macro)
-                    for iter_asn in asn_list:
-                        routes.extend(proxy.expand_as(iter_asn, proto))
-                    if asn not in asn_list:
-                        routes.extend(proxy.expand_as(asn, proto))
+                # if macro is None:
+                #     routes.extend(proxy.expand_as(asn, proto))
+                # else:
+                #     asn_list = proxy.expand_as_macro(macro)
+                #     for iter_asn in asn_list:
+                #         routes.extend(proxy.expand_as(iter_asn, proto))
+                #     if asn not in asn_list:
+                #         routes.extend(proxy.expand_as(asn, proto))
+                routes.extend(WhoisProxy.expand_as_and_macro(asn, macro, proto))
                 route_set = RouteSet.from_list(proto, routes)
                 with open(file_path, "w+") as f:
                     f.write(json.dumps(route_set.to_dict(), sort_keys=True, indent=4))
