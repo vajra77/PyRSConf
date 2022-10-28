@@ -18,25 +18,13 @@ class Customer:
         return self._name
 
     @property
+    def asn(self):
+        return self._asn
+
+    @property
     def macro(self):
         return self._macro
 
     @property
     def macro6(self):
         return self._macro
-
-    @classmethod
-    def retrieve_all(cls):
-        cnx = mysql.connector.connect(host=DB['host'],
-                                      user=DB['user'],
-                                      password=DB['password'],
-                                      database=DB['database'])
-        cursor = cnx.cursor(buffered=True)
-        query = None
-
-        if do_all:
-            query = "SELECT shortname, autsys, peeringmacro, peeringmacrov6 " \
-                    "FROM cust WHERE type <> 2 ORDER BY shortname"
-        elif member is not None:
-            query = f"SELECT shortname, autsys, peeringmacro, peeringmacrov6 " \
-                    f"FROM cust WHERE shortname='{member}'"
