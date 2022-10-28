@@ -3,14 +3,13 @@ import getopt
 import threading
 import mysql.connector
 import sys
-import time
 sys.path.append('.')
 sys.path.append('..')
 from pyrsconf import WhoisProxy, RouteSet
 from config import DB
 
 
-SHARED_RESULTS = dict()
+SHARED_SEMAPHORE = threading.Semaphore(4)
 
 
 def usage():
@@ -40,12 +39,6 @@ def get_options():
             assert False, "unhandled option"
 
     return do_all, member, int(proto), output
-
-
-def th_resolve_asn_list(asn_list, proto):
-    for iter_asn in asn_list:
-        SHARED_RESULTS[iter_asn] = WhoisProxy.expand_as(iter_asn, proto)
-        time.sleep(0.5)
 
 
 def main():
@@ -87,24 +80,19 @@ def main():
                         asn_list.append(asn)
                 else:
                     asn_list.append(asn)
-                chunk_size = len(asn_list) // 4
-                chunked_asn_list = [asn_list[i:i+chunk_size] for i in range(0, len(asn_list), chunk_size)]
-                threads = list()
-                SHARED_RESULTS.clear()
-                for chunk in chunked_asn_list:
-                    th = threading.Thread(target=th_resolve_asn_list, args=(chunk, proto))
-                    th.start()
-                    threads.append(th)
-                for th in threads:
-                    th.join()
+
                 all_routes = list()
-                for res in SHARED_RESULTS.values():
-                    all_routes.extend(res)
+                for iter_asn in asn_list:
+                    SHARED_SEMAPHORE.acquire()
+                    all_routes.extend(WhoisProxy.expand_as(iter_asn, proto))
+                    SHARED_SEMAPHORE.release()
+
                 route_set = RouteSet.from_list(all_routes, proto)
                 with open(file_path, "w+") as f:
                     f.write(json.dumps(route_set.to_dict(), sort_keys=True, indent=4))
             except Exception as e:
                 print(f"exception caught: {e}", file=sys.stderr)
+                SHARED_SEMAPHORE.release()
             # finally:
             #     continue
         cursor.close()
