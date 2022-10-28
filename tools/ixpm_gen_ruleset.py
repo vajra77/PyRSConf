@@ -1,11 +1,11 @@
 import json
 import getopt
-import mysql.connector
 import sys
 import time
 sys.path.append('.')
 sys.path.append('..')
 from pyrsconf import WhoisProxy, RouteSet
+from ixpm import get_customers, get_customer
 from config import DB
 
 
@@ -41,38 +41,26 @@ def get_options():
 def main():
     try:
         do_all, member, proto, output = get_options()
-
-        cnx = mysql.connector.connect(host=DB['host'],
-                                      user=DB['user'],
-                                      password=DB['password'],
-                                      database=DB['database'])
-        cursor = cnx.cursor(buffered=True)
-        query = None
-
+        customers = None
         if do_all:
-            query = "SELECT shortname, autsys, peeringmacro, peeringmacrov6 " \
-                    "FROM cust WHERE type <> 2 ORDER BY shortname"
+            customers = get_customers(DB['host'], DB['user'], DB['pass'], DB['name'])
         elif member is not None:
-            query = f"SELECT shortname, autsys, peeringmacro, peeringmacrov6 " \
-                    f"FROM cust WHERE shortname='{member}'"
+            customers = get_customer(member, DB['host'], DB['user'], DB['pass'], DB['name'])
         else:
             print("specify either -a or -m <ixpm-member> to proceed")
-            cursor.close()
-            cnx.close()
             usage()
             exit(1)
 
-        cursor.execute(query)
-        for (name, asn, macro4, macro6) in cursor:
-            if proto == 6 and macro6 is not None:
-                macro = macro6
+        for cust in customers:
+            if proto == 6 and cust.macro6 is not None:
+                macro = cust.macro6
             else:
-                macro = macro4
-            file_path = f"{output}/as{asn}-v{proto}.json"
-            print(f"generating filters for {name} in: {file_path}")
+                macro = cust.macro
+            file_path = f"{output}/as{cust.asn}-v{proto}.json"
+            print(f"generating filters for {cust.name} in: {file_path}")
             sys.stdout.flush()
             try:
-                all_routes = WhoisProxy.bulk_expand(asn, macro, proto)
+                all_routes = WhoisProxy.bulk_expand(cust.asn, macro, proto)
                 route_set = RouteSet.from_list(all_routes, proto)
                 with open(file_path, "w+") as f:
                     f.write(json.dumps(route_set.to_dict(), sort_keys=True, indent=4))
@@ -81,8 +69,6 @@ def main():
             finally:
                 time.sleep(1.0)
                 continue
-        cursor.close()
-        cnx.close()
     except Exception as e:
         print(f"Exception caught: {e}", file=sys.stderr)
         exit(1)
