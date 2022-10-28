@@ -49,19 +49,26 @@ def main():
         query = None
 
         if do_all:
-            query = "SELECT shortname, autsys, peeringmacro FROM cust ORDER BY shortname"
+            query = "SELECT shortname, autsys, peeringmacro, peeringmacro6 FROM cust ORDER BY shortname"
         elif member is not None:
-            query = f"SELECT shortname, autsys, peeringmacro FROM cust WHERE shortname='{member}'"
+            query = f"SELECT shortname, autsys, peeringmacro, peeringmacro6 FROM cust WHERE shortname='{member}'"
         else:
             print("specify either -a or -m <ixpm-member> to proceed")
+            cursor.close()
+            cnx.close()
             usage()
             exit(1)
 
         cursor.execute(query)
         proxy = WhoisProxy()
-        for (name, asn, macro) in cursor:
+        for (name, asn, macro4, macro6) in cursor:
+            if proto == 6 and macro6 is not None:
+                macro = macro6
+            else:
+                macro = macro4
             file_path = f"{output}/as{asn}-v{proto}.json"
             print(f"generating filters for {name} in: {file_path}")
+            sys.stdout.flush()
             routes = []
             try:
                 if macro is None:
@@ -79,11 +86,11 @@ def main():
                 print(f"exception caught: {e}", file=sys.stderr)
             finally:
                 continue
-
+        cursor.close()
+        cnx.close()
     except Exception as e:
         print(f"Exception caught: {e}", file=sys.stderr)
         exit(1)
-    exit(0)
 
 
 if __name__ == '__main__':
