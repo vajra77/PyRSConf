@@ -37,7 +37,7 @@ class RouteSet:
         return {'routes': out_routes}
 
     @classmethod
-    def from_list(cls, proto, routes):
+    def from_list(cls, routes, proto):
         result = cls(proto)
         for r in routes:
             result.add_route(r)

@@ -1,11 +1,16 @@
 import json
 import getopt
+import threading
 import mysql.connector
 import sys
 sys.path.append('.')
 sys.path.append('..')
 from pyrsconf import WhoisProxy, RouteSet
 from config import DB
+
+
+CHUNK_SIZE = 8
+SHARED_RESULTS = dict()
 
 
 def usage():
@@ -35,6 +40,11 @@ def get_options():
             assert False, "unhandled option"
 
     return do_all, member, int(proto), output
+
+
+def th_resolve_asn_list(asn_list, proto):
+    for iter_asn in asn_list:
+        SHARED_RESULTS[iter_asn] = WhoisProxy.expand_as(iter_asn, proto)
 
 
 def main():
@@ -68,18 +78,27 @@ def main():
             file_path = f"{output}/as{asn}-v{proto}.json"
             print(f"generating filters for {name} in: {file_path}")
             sys.stdout.flush()
-            routes = list()
             try:
-                # if macro is None:
-                #     routes.extend(proxy.expand_as(asn, proto))
-                # else:
-                #     asn_list = proxy.expand_as_macro(macro)
-                #     for iter_asn in asn_list:
-                #         routes.extend(proxy.expand_as(iter_asn, proto))
-                #     if asn not in asn_list:
-                #         routes.extend(proxy.expand_as(asn, proto))
-                routes.extend(WhoisProxy.expand_as_and_macro(asn, macro, proto))
-                route_set = RouteSet.from_list(proto, routes)
+                asn_list = list()
+                if macro is not None:
+                    asn_list.extend(WhoisProxy.expand_as_macro(macro))
+                    if asn not in asn_list:
+                        asn_list.append(asn)
+                else:
+                    asn_list.append(asn)
+                chunked_asn_list = [asn_list[i:i+CHUNK_SIZE] for i in range(0, len(asn_list), CHUNK_SIZE)]
+                threads = list()
+                SHARED_RESULTS.clear()
+                for chunk in chunked_asn_list:
+                    th = threading.Thread(target=th_resolve_asn_list, args=(chunk, proto))
+                    th.start()
+                    threads.append(th)
+                for th in threads:
+                    th.join()
+                all_routes = list()
+                for res in SHARED_RESULTS.values():
+                    all_routes.extend(res)
+                route_set = RouteSet.from_list(all_routes, proto)
                 with open(file_path, "w+") as f:
                     f.write(json.dumps(route_set.to_dict(), sort_keys=True, indent=4))
             except Exception as e:
