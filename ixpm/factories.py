@@ -27,7 +27,7 @@ def get_customer(c_name, db_host, db_user, db_pass, db_name):
                                   database=db_name)
     cursor = cnx.cursor(buffered=True)
     query = f"SELECT id,shortname,autsys,peeringmacro,peeringmacrov6 " \
-            f"FROM cust WHERE shorthname={c_name}"
+            f"FROM cust WHERE shortname='{c_name}'"
     cursor.execute(query)
     for (cid, name, asn, macro4, macro6) in cursor:
         result.append(Customer(cid, name, asn, macro4, macro6))
