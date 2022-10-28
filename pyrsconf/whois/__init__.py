@@ -1,1 +1,1 @@
-from .whois_proxy import WhoisProxy
+from .proxy import WhoisProxy

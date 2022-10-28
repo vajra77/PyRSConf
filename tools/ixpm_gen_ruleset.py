@@ -73,19 +73,9 @@ def main():
             print(f"generating filters for {name} in: {file_path}")
             sys.stdout.flush()
             try:
-                asn_list = list()
-                if macro is not None:
-                    asn_list.extend(WhoisProxy.expand_as_macro(macro))
-                    if asn not in asn_list:
-                        asn_list.append(asn)
-                else:
-                    asn_list.append(asn)
-
-                all_routes = list()
-                for iter_asn in asn_list:
-                    SHARED_SEMAPHORE.acquire()
-                    all_routes.extend(WhoisProxy.expand_as(iter_asn, proto))
-                    SHARED_SEMAPHORE.release()
+                SHARED_SEMAPHORE.acquire()
+                all_routes = WhoisProxy.bulk_expand(asn, macro, proto)
+                SHARED_SEMAPHORE.release()
 
                 route_set = RouteSet.from_list(all_routes, proto)
                 with open(file_path, "w+") as f:

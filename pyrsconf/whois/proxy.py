@@ -69,3 +69,27 @@ class WhoisProxy:
             if route.proto() == proto:
                 result.append(route)
         return result
+
+    @classmethod
+    def bulk_expand(cls, asn: int, macro: str, proto: int) -> list:
+        result = []
+        expand_str = f"AS{asn}"
+        if macro is not None:
+            expand_str += f" {macro}"
+        filename = _get_random_tmpfile()
+        cmd = f"bgpq4 -h whois.radb.net -{proto} -j {expand_str} > {filename}"
+        if os.system(cmd) != 0:
+            raise BGPQException(f"bgpq query: {expand_str}")
+        with open(filename) as f:
+            data = json.load(f)
+        f.close()
+        os.remove(filename)
+
+        for net in data['NN']:
+            prefix = net['prefix']
+            source = "UNDEF"
+            origin = "UNDEF"
+            route = RouteObject(prefix, origin, source)
+            if route.proto() == proto:
+                result.append(route)
+        return result
