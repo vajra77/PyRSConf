@@ -84,8 +84,8 @@ def main():
                     f.write(json.dumps(route_set.to_dict(), sort_keys=True, indent=4))
             except Exception as e:
                 print(f"exception caught: {e}", file=sys.stderr)
-            finally:
-                continue
+            # finally:
+            #     continue
         cursor.close()
         cnx.close()
     except Exception as e:
