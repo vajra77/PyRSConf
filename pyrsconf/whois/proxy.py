@@ -49,23 +49,24 @@ class WhoisProxy:
     # expand an ASN into a list of ROUTE/6 objects
     @classmethod
     def expand_as(cls, asn: int, proto: int) -> list:
-        result = []
         filename = _get_random_tmpfile()
         cmd = f"bgpq4 -h whois.radb.net -{proto} -j as{asn} > {filename}"
         if os.system(cmd) != 0:
             raise BGPQException(asn)
-        with open(filename) as f:
-            data = json.load(f)
-        f.close()
-        os.remove(filename)
+        else:
+            result = []
+            with open(filename) as f:
+                data = json.load(f)
+            f.close()
+            os.remove(filename)
 
-        for net in data['NN']:
-            prefix = net['prefix']
-            source = "UNDEF"
-            route = RouteObject(prefix, asn, source)
-            if route.proto() == proto:
-                result.append(route)
-        return result
+            for net in data['NN']:
+                prefix = net['prefix']
+                source = "UNDEF"
+                route = RouteObject(prefix, asn, source)
+                if route.proto() == proto:
+                    result.append(route)
+            return result
 
     @classmethod
     def bulk_expand(cls, asn: int, macro: str, proto: int) -> list:
@@ -81,7 +82,6 @@ class WhoisProxy:
             data = json.load(f)
         f.close()
         os.remove(filename)
-
         for net in data['NN']:
             prefix = net['prefix']
             source = "UNDEF"

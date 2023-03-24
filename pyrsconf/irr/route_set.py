@@ -26,7 +26,7 @@ class RouteSet:
 
     def to_dict(self):
         out_routes = []
-        for r in self.routes:
+        for r in self._routes:
             rd = {
                 'route': r.route,
                 'origin': r.origin,

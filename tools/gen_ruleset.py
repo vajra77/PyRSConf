@@ -55,7 +55,7 @@ def main():
                 routes.extend(proxy.expand_as(iter_asn, proto))
             if asn not in asn_list:
                 routes.extend(proxy.expand_as(asn, proto))
-        route_set = RouteSet.from_list(proto, routes)
+        route_set = RouteSet.from_list(routes, proto)
         with open(output, "w+") as f:
             f.write(json.dumps(route_set.to_dict(), sort_keys=True, indent=4))
     except Exception as e:
